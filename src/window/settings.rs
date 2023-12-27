@@ -24,7 +24,10 @@ pub struct WindowSettings {
     pub input_macos_alt_is_meta: bool,
     pub input_ime: bool,
     pub unlink_border_highlights: bool,
+    pub background_opacity: f32,
 
+    #[option = "custombackground"]
+    pub background_image: Option<String>,
     #[option = "mousemoveevent"]
     pub mouse_move_event: bool,
     #[option = "lines"]
@@ -61,6 +64,8 @@ impl Default for WindowSettings {
             observed_lines: None,
             observed_columns: None,
             unlink_border_highlights: true,
+            background_image: None,
+            background_opacity: 1.0,
         }
     }
 }

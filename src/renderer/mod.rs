@@ -150,11 +150,30 @@ impl Renderer {
         let default_background = self.grid_renderer.get_default_background();
         let font_dimensions = self.grid_renderer.font_dimensions;
 
-        let transparency = { SETTINGS.get::<WindowSettings>().transparency };
+        let settings = SETTINGS.get::<WindowSettings>();
+
+        let transparency = settings.transparency;
         root_canvas.clear(default_background.with_a((255.0 * transparency) as u8));
         root_canvas.save();
         root_canvas.reset_matrix();
 
+        // TODO load the image if it not cached or has changed
+        let _background_image = { settings.background_image };
+        let _background_opacity = { settings.background_opacity };
+
+        let mut binding = skia_safe::Paint::default();
+        let background_paint = binding.set_alpha((0.5 * 255.0) as u8);
+
+        // TODO: Load the image from the config file
+        let img_path = "C:\\Users\\50nua\\Pictures\\miyano\\Miyano_Happy.png";
+        let img_stream = skia_safe::Data::from_filename(img_path).unwrap();
+        let img = skia_safe::Image::from_encoded(img_stream).unwrap();
+
+        root_canvas.draw_image(img, (0, 0), Some(&background_paint));
+        root_canvas.save();
+        root_canvas.reset_matrix();
+
+        /*
         if let Some(root_window) = self.rendered_windows.get(&1) {
             let clip_rect = root_window.pixel_region(font_dimensions);
             root_canvas.clip_rect(clip_rect, None, Some(false));
@@ -193,6 +212,7 @@ impl Renderer {
                 )
             })
             .collect();
+        */
 
         self.cursor_renderer
             .draw(&mut self.grid_renderer, root_canvas);
