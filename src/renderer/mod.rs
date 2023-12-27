@@ -1,4 +1,5 @@
 pub mod animation_utils;
+pub mod background_renderer;
 pub mod cursor_renderer;
 pub mod fonts;
 pub mod grid_renderer;
@@ -22,6 +23,7 @@ use crate::{
     dimensions::Dimensions,
     editor::{Cursor, Style},
     profiling::{tracy_named_frame, tracy_zone},
+    renderer::background_renderer::*,
     settings::*,
     window::{ShouldRender, UserEvent},
     WindowSettings,
@@ -90,6 +92,7 @@ pub enum DrawCommand {
 pub struct Renderer {
     cursor_renderer: CursorRenderer,
     pub grid_renderer: GridRenderer,
+    background: Background,
     current_mode: EditorMode,
 
     rendered_windows: HashMap<u64, RenderedWindow>,
@@ -121,10 +124,13 @@ impl Renderer {
 
         let profiler = profiler::Profiler::new(12.0);
 
+        let background = Background::default();
+
         Renderer {
             rendered_windows,
             cursor_renderer,
             grid_renderer,
+            background,
             current_mode,
             window_regions,
             profiler,
@@ -157,63 +163,56 @@ impl Renderer {
         root_canvas.save();
         root_canvas.reset_matrix();
 
-        // TODO load the image if it not cached or has changed
-        let _background_image = { settings.background_image };
-        let _background_opacity = { settings.background_opacity };
+        self.background
+            .load_image("C:\\Users\\50nua\\Pictures\\miyano\\Miyano_Happy.png".into());
+        // self.background.load_image(
+        //     "C:\\Users\\50nua\\Pictures\\miyano\\tumblr_o8zix9oxpr1us8wmeo2_250.png".into(),
+        // );
+        self.background.set_opacity(0.1);
+        // background.update_window_info(0, 0, 800, 600);
 
-        let mut binding = skia_safe::Paint::default();
-        let background_paint = binding.set_alpha((0.5 * 255.0) as u8);
-
-        // TODO: Load the image from the config file
-        let img_path = "C:\\Users\\50nua\\Pictures\\miyano\\Miyano_Happy.png";
-        let img_stream = skia_safe::Data::from_filename(img_path).unwrap();
-        let img = skia_safe::Image::from_encoded(img_stream).unwrap();
-
-        root_canvas.draw_image(img, (0, 0), Some(&background_paint));
-        root_canvas.save();
-        root_canvas.reset_matrix();
+        self.background.draw(root_canvas);
 
         /*
-        if let Some(root_window) = self.rendered_windows.get(&1) {
-            let clip_rect = root_window.pixel_region(font_dimensions);
-            root_canvas.clip_rect(clip_rect, None, Some(false));
-        }
+               if let Some(root_window) = self.rendered_windows.get(&1) {
+                   let clip_rect = root_window.pixel_region(font_dimensions);
+                   root_canvas.clip_rect(clip_rect, None, Some(false));
+               }
 
-        let windows: Vec<&mut RenderedWindow> = {
-            let (mut root_windows, mut floating_windows): (
-                Vec<&mut RenderedWindow>,
-                Vec<&mut RenderedWindow>,
-            ) = self
-                .rendered_windows
-                .values_mut()
-                .filter(|window| !window.hidden)
-                .partition(|window| window.anchor_info.is_none());
+               let windows: Vec<&mut RenderedWindow> = {
+                   let (mut root_windows, mut floating_windows): (
+                       Vec<&mut RenderedWindow>,
+                       Vec<&mut RenderedWindow>,
+                   ) = self
+                       .rendered_windows
+                       .values_mut()
+                       .filter(|window| !window.hidden)
+                       .partition(|window| window.anchor_info.is_none());
 
-            root_windows
-                .sort_by(|window_a, window_b| window_a.id.partial_cmp(&window_b.id).unwrap());
+                   root_windows
+                       .sort_by(|window_a, window_b| window_a.id.partial_cmp(&window_b.id).unwrap());
 
-            floating_windows.sort_by(floating_sort);
+                   floating_windows.sort_by(floating_sort);
 
-            root_windows.into_iter().chain(floating_windows).collect()
-        };
+                   root_windows.into_iter().chain(floating_windows).collect()
+               };
 
-        let settings = SETTINGS.get::<RendererSettings>();
-        let mut floating_rects = Vec::new();
+               let settings = SETTINGS.get::<RendererSettings>();
+               let mut floating_rects = Vec::new();
 
-        self.window_regions = windows
-            .into_iter()
-            .map(|window| {
-                window.draw(
-                    root_canvas,
-                    &settings,
-                    default_background.with_a((255.0 * transparency) as u8),
-                    font_dimensions,
-                    &mut floating_rects,
-                )
-            })
-            .collect();
+               self.window_regions = windows
+                   .into_iter()
+                   .map(|window| {
+                       window.draw(
+                           root_canvas,
+                           &settings,
+                           default_background.with_a((255.0 * transparency) as u8),
+                           font_dimensions,
+                           &mut floating_rects,
+                       )
+                   })
+                   .collect();
         */
-
         self.cursor_renderer
             .draw(&mut self.grid_renderer, root_canvas);
 
